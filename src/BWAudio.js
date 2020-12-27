@@ -7,6 +7,21 @@ class BWAudio {
         this.isPaused = false;
         this.isWebAudio;
         this.source;
+        this.next;
+        this.isPlayingNext = false;
+
+        this.onerror = (e) => {
+            console.error(e);
+        };
+
+        this.oncanplay = () => {};
+
+        this.onended = () => {
+            if (this.next && !this.isPlayingNext && this.isPlaying) {
+                this.next.start();
+                this.isPlayingNext = true;
+            }
+        };
 
         if (window.AudioContext || window.webkitAudioContext) {
             this.initWebAudio();
@@ -21,6 +36,8 @@ class BWAudio {
         this.source = new Audio(this.url);
         this.source.volume = this.volume;
         this.source.loop = this.looping;
+        this.source.oncanplay = this.oncanplay;
+        this.source.onended = this.onended;
     }
 
     initWebAudio() {
@@ -29,6 +46,14 @@ class BWAudio {
             this.aCtx = new window.webkitAudioContext();
         } else {
             this.aCtx = new window.AudioContext();
+        }
+
+        if (this.aCtx.state != "running") {
+            this.pageInteraction = document.addEventListener("click", () => {
+                this.aCtx.resume().then(() => {
+                    document.removeEventListener("click", this.pageInteraction);
+                });
+            });
         }
 
         this.source = this.aCtx.createBufferSource();
@@ -45,10 +70,10 @@ class BWAudio {
                     this.source.buffer = this.buffer = decoded;
                     this.source.loop = this.looping;
                     this.source.connect(this.gainNode);
+                    this.source.onended = this.onended;
+                    this.oncanplay();
                 })
-                .catch((err) => {
-                    console.error(err);
-                });
+                .catch(onerror);
         } else {
             let xhr = new XMLHttpRequest();
 
@@ -62,16 +87,14 @@ class BWAudio {
                         this.source.buffer = this.buffer = decoded;
                         this.source.loop = this.looping;
                         this.source.connect(this.gainNode);
+                        this.source.onended = this.onended;
+                        this.oncanplay();
                     },
-                    (err) => {
-                        console.error(err);
-                    }
+                    this.onerror
                 );
             });
 
-            xhr.addEventListener("error", (err) => {
-                console.error(err);
-            });
+            xhr.addEventListener("error", this.onerror);
 
             xhr.send();
         }
@@ -83,12 +106,20 @@ class BWAudio {
         } else {
             this.source.volume = this.volume = volume;
         }
+
+        if (this.next) {
+            this.next.setVolume(this.volume);
+        }
     }
 
     start() {
         if (!this.isPlaying) {
             if (this.isWebAudio) {
-                this.source.start(0);
+                if (this.aCtx.state == "running") {
+                    this.source.start(0);
+                } else {
+                    return;
+                }
             } else {
                 this.source.play();
             }
@@ -100,17 +131,23 @@ class BWAudio {
 
     stop() {
         if (this.isPlaying) {
+            this.isPlaying = false;
+
             if (this.isWebAudio) {
                 this.source.stop(0);
                 this.source = this.aCtx.createBufferSource();
                 this.source.buffer = this.buffer;
                 this.source.connect(this.gainNode);
                 this.source.loop = this.looping;
+                this.source.onended = this.onended;
             } else {
                 this.source.pause();
             }
 
-            this.isPlaying = false;
+            if (this.isPlayingNext) {
+                this.next.stop();
+                this.isPlayingNext = false;
+            }
         }
     }
 
