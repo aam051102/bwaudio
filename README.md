@@ -6,6 +6,33 @@ I made this because I was asked how to loop audio without a pause and I got anno
 
 Use it however you see fit.
 
+## Usage
+
+### Start
+
+```js
+const audio = new WBAudio("path/to/audio.mp3", 1, true); // URL, volume, looping
+audio.start();
+```
+
+### Stop
+
+```js
+audio.stop();
+```
+
+### Pause
+
+```js
+audio.pause();
+```
+
+### Resume
+
+```js
+audio.resume();
+```
+
 ## License
 
 MIT
