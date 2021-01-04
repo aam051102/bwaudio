@@ -11,7 +11,7 @@ Use it however you see fit.
 ### Start
 
 ```js
-const audio = new WBAudio("path/to/audio.mp3", 1, true); // URL, volume, looping
+const audio = new BWAudio("path/to/audio.mp3", 1, true); // URL, volume, looping
 audio.start();
 ```
 
