@@ -1,5 +1,5 @@
 class BWAudio {
-    constructor(url, volume, looping) {
+    constructor(url, volume, looping, next) {
         this.url = url;
         this.volume = volume || 1;
         this.looping = looping || false;
@@ -7,7 +7,7 @@ class BWAudio {
         this.isPaused = false;
         this.isWebAudio;
         this.source;
-        this.next;
+        this.next = next ? new BWAudio(next, volume, true) : undefined;
         this.isPlayingNext = false;
 
         this.onerror = (e) => {
